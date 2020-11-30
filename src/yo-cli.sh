@@ -16,6 +16,16 @@ YO_TOKEN_PATH="${YO_TOKEN_PATH:-$YO_CONFIG_DIR/token}"
 
 YO_BASE_URL="${YO_BASE_URL:-https://api.yocli.io}"
 
+text_display_qr() {
+    if (( 22 < "$(tput lines)" )); then
+        echo -n "$1" | qrencode -t utf8
+    else
+        echo "Your terminal is too small to display the pairing QR Code properly."
+        echo "try making it larger and invoking \`yo\` again!"
+        exit 1
+    fi
+}
+
 display_qr() {
     local title="yo"
     if [[ -n $DISPLAY || -n $WAYLAND_DISPLAY ]]; then
@@ -25,15 +35,11 @@ display_qr() {
             echo -n "$1" | qrencode --size 10 -o - | gm display -title "$title" -geometry +200+200 - &
         elif type display >/dev/null 2>&1; then
             echo -n "$1" | qrencode --size 10 -o - | display -title "$title" -geometry +200+200 - &
-        elif (( 22 < "$(tput lines)")); then
-            echo -n "$1" | qrencode -t utf8
         else
-            echo "No good way to do this."
+            text_display_qr "$1"
         fi
-    elif (( 22 < "$(tput lines)" )); then
-        echo -n "$1" | qrencode -t utf8
     else
-        echo "No good way to do this."
+        text_display_qr "$1"
     fi
 }
 
