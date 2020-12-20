@@ -18,7 +18,7 @@ ifneq ($(strip $(wildcard $(PLATFORMFILE))),)
 install: # install-common
 	@install -v -d "$(DESTDIR)$(LIBDIR)/$(PROGNAME)" && install -m 0644 -v "$(PLATFORMFILE)" "$(DESTDIR)$(LIBDIR)/$(PROGNAME)/platform.sh"
 	@install -v -d "$(DESTDIR)$(BINDIR)/"
-	@trap 'rm -f src/.$(BINNAME)' EXIT; sed 's:.*PLATFORM_FUNCTION_FILE.*:source "$(LIBDIR)/$(PROGNAME)/platform.sh":' src/$(PROGNAME).sh > src/.$(BINNAME) && \
+	@trap 'rm -f src/.$(BINNAME)' EXIT; sed 's:.*PLATFORM_FUNCTION_FILE.*:source "$(DESTDIR)$(LIBDIR)/$(PROGNAME)/platform.sh":' src/$(PROGNAME).sh > src/.$(BINNAME) && \
 	install -v -d "$(DESTDIR)$(BINDIR)/" && install -m 0755 -v src/.$(BINNAME) "$(DESTDIR)$(BINDIR)/$(BINNAME)"
 else
 install: # install-common
