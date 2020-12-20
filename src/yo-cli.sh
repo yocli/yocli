@@ -45,14 +45,19 @@ display_qr() {
 
 yo() {
     curl --silent -o /dev/null -w '%{http_code}' \
-         -X POST -F pc_token="$(< "$YO_TOKEN_PATH")" \
+         -X POST \
+         -F pc_token="$(< "$YO_TOKEN_PATH")" \
+         -F apns-collapse-id="$1" \
+         ${2:+-F apns-push-type="$2"} \
+         -F pc_token="$(< "$YO_TOKEN_PATH")" \
          -L "${YO_BASE_URL}/yo" 2>/dev/null
 }
 
 yo_repeatedly() {
+    local collapse_id="$(uuidgen)"
     for (( i=0; "$i"<"${3:-256}"; i++ )); do
         local status
-        status="$(yo)"
+        status="$(yo "$collapse_id" ${4:+"$4"})"
         if (("$status"<"${1}" || "${2}"<="$status" )); then
             break
         fi
@@ -75,7 +80,7 @@ new_token() {
 link_w_qr() {
     display_qr "${YO_BASE_URL}/?p=${1}"
     local status
-    status="$(yo_repeatedly 400 500)"
+    status="$(yo_repeatedly 400 500 "" background)"
     [ -n "$!" ] && kill $!
     if ((500 <= "$status" && "$status" < 600)); then
         echo "It seems that the yo backend at '$YO_BASE_URL' is down right now, please try again later."
@@ -91,10 +96,10 @@ if [ ! -f "$YO_TOKEN_PATH" ]; then
     echo "No mobile device linked. Let's fix that :-)"
     link_w_qr "$(new_token)"
 else
-    status="$(yo_repeatedly 500 600 5)"
+    status="$(yo_repeatedly 500 600 5 alert)"
     if (("$status" < 200 && 300 <= "$status" )); then
-        if [ "$status" -eq 404 ]; then
-            echo "No mobile device linked. Let's fix that :-)"
+        if [ "$status" -eq 410 ]; then
+            echo "No mobile device currently linked. Let's fix that :-)"
             link_w_qr "$(new_token)"
         elif ((500 <= "$status" && "$status" < 600)); then
             echo "It seems that the yo backend at '$YO_BASE_URL' is down right now, please try again later."
