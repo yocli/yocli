@@ -79,6 +79,7 @@ link_w_qr() {
     [ -n "$!" ] && kill $!
     if ((500 <= "$status" && "$status" < 600)); then
         echo "It seems that the yo backend at '$YO_BASE_URL' is down right now, please try again later."
+        exit 1
     else
         echo "Sucessfully linked a mobile device!"
     fi
@@ -97,8 +98,10 @@ else
             link_w_qr "$(new_token)"
         elif ((500 <= "$status" && "$status" < 600)); then
             echo "It seems that the yo backend at '$YO_BASE_URL' is down right now, please try again later."
+            exit 1
         else
-            echo "Unknown error."
+            echo "Unknown error. Status code: ${status}"
+            exit 1
         fi
     fi
 fi
