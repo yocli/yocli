@@ -91,7 +91,7 @@ if [ ! -f "$YO_TOKEN_PATH" ]; then
     link_w_qr "$(new_token)"
 else
     status="$(yo_repeatedly 500 600 5)"
-    if [ "$status" -ne 204 ]; then
+    if (("$status" < 200 && 300 <= "$status" )); then
         if [ "$status" -eq 404 ]; then
             echo "No mobile device linked. Let's fix that :-)"
             link_w_qr "$(new_token)"
