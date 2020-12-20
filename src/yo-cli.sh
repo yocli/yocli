@@ -54,7 +54,8 @@ yo() {
 }
 
 yo_repeatedly() {
-    local collapse_id="$(uuidgen)"
+    local collapse_id
+    collapse_id="$(uuidgen)"
     for (( i=0; "$i"<"${3:-256}"; i++ )); do
         local status
         status="$(yo "$collapse_id" ${4:+"$4"})"
