@@ -33,6 +33,15 @@ EOF
 }
 
 # Usage:
+#     log CATEGORY <<< "Message goes here"
+log() {
+    if [ -n "$DEBUG" ]; then
+        echo -n "$1 | ${FUNCNAME[1]}: " >&2
+        cat >&2
+    fi
+}
+
+# Usage:
 #     link_w_qr STR-TO-DISPLAY
 text_display_qr() {
     if (( 22 < "$(tput lines)" )); then
@@ -64,7 +73,6 @@ display_qr() {
 yo() {
     curl --silent -o /dev/null -w '%{http_code}' \
          -X POST \
-         -F pc_token="$(< "$YO_TOKEN_PATH")" \
          -F apns-collapse-id="$1" \
          ${2:+-F apns-push-type="$2"} \
          -F pc_token="$(< "$YO_TOKEN_PATH")" \
@@ -76,24 +84,31 @@ yo() {
 yo_repeatedly() {
     local collapse_id
     collapse_id="$(uuidgen)"
+    log DEBUG <<< "HTTP codes inside ${1}..${2} will prompt a retry up to ${3:-256} times"
     for (( i=0; "$i"<"${3:-256}"; i++ )); do
-        local status
-        status="$(yo "$collapse_id" ${4:+"$4"})"
-        if (("$status"<"${1}" || "${2}"<="$status" )); then
-            break
-        fi
         if [ -n "$!" ] && ! ps -p "$!" >/dev/null; then
             echo "Aborted." >&2
             exit 1
         fi
-        sleep 1
+        local status
+        status="$(yo "$collapse_id" ${4:+"$4"})"
+        if (("$status"<"${1}" || "${2}"<="$status" )); then
+            log DEBUG <<< "Try #${i}, status=${status}: OUTside retry range, not retrying anymore"
+            break
+        else
+            log DEBUG <<< "Try #${i}, status=${status}: INside retry range, retrying in 1 sec..."
+            sleep 1
+        fi
     done
+    log DEBUG <<< "Final HTTP status: ${status}"
     echo "$status"
 }
 
 new_token() {
     local yo_token
     yo_token="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+    log INFO <<< "Generated PC token: '${yo_token}'"
+    log INFO <<< "Saving newly generated PC token to: '$YO_TOKEN_PATH'"
     echo "$yo_token" > "$YO_TOKEN_PATH"
     echo "$yo_token"
 }
@@ -101,7 +116,9 @@ new_token() {
 # Usage:
 #     link_w_qr PC_TOKEN
 link_w_qr() {
+    log INFO <<< "Displaying QR code for '${YO_BASE_URL}/?p=${1}'"
     display_qr "${YO_BASE_URL}/?p=${1}"
+    log DEBUG <<< "Polling backend for success..."
     local status
     status="$(yo_repeatedly 400 500 "" background)"
     [ -n "$!" ] && kill $!
