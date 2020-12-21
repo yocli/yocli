@@ -16,6 +16,8 @@ YO_TOKEN_PATH="${YO_TOKEN_PATH:-$YO_CONFIG_DIR/token}"
 
 YO_BASE_URL="${YO_BASE_URL:-https://api.yocli.io}"
 
+# Usage:
+#     link_w_qr STR-TO-DISPLAY
 text_display_qr() {
     if (( 22 < "$(tput lines)" )); then
         echo -n "$1" | qrencode -t utf8
@@ -43,6 +45,8 @@ display_qr() {
     fi
 }
 
+# Usage:
+#     yo APNS-COLLAPSE-ID [ APNS-PUSH-TYPE ]
 yo() {
     curl --silent -o /dev/null -w '%{http_code}' \
          -X POST \
@@ -53,6 +57,8 @@ yo() {
          -L "${YO_BASE_URL}/yo" 2>/dev/null
 }
 
+# Usage:
+#     yo-repeatedly HTTP-RETRY-LOW HTTP-RETRY-HIGH [ MAX-RETRY-TIMES APNS-PUSH-TYPE ]
 yo_repeatedly() {
     local collapse_id
     collapse_id="$(uuidgen)"
@@ -78,6 +84,8 @@ new_token() {
     echo "$yo_token"
 }
 
+# Usage:
+#     link_w_qr PC_TOKEN
 link_w_qr() {
     display_qr "${YO_BASE_URL}/?p=${1}"
     local status
