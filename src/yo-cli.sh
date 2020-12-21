@@ -92,7 +92,7 @@ yo_repeatedly() {
         fi
         local status
         status="$(yo "$collapse_id" ${4:+"$4"})"
-        if (("$status"<"${1}" || "${2}"<="$status" )); then
+        if (( "$status"<"${1}" || "${2}"<="$status" )); then
             log DEBUG <<< "Try #${i}, status=${status}: OUTside retry range, not retrying anymore"
             break
         else
@@ -122,7 +122,7 @@ link_w_qr() {
     local status
     status="$(yo_repeatedly 400 500 "" background)"
     [ -n "$!" ] && kill $!
-    if ((500 <= "$status" && "$status" < 600)); then
+    if (( 500 <= "$status" && "$status" < 600 )); then
         server_error_msg | die
     else
         echo "Sucessfully linked a mobile device!"
@@ -136,11 +136,11 @@ if [ ! -e "$YO_TOKEN_PATH" ]; then
     link_w_qr "$(new_token)"
 else
     status="$(yo_repeatedly 500 600 5 alert)"
-    if (("$status" < 200 && 300 <= "$status" )); then
+    if (( "$status" < 200 && 300 <= "$status" )); then
         if [ "$status" -eq 410 ]; then
             echo "Mobile device no longer linked. Let's fix that :-)"
             link_w_qr "$(new_token)"
-        elif ((500 <= "$status" && "$status" < 600)); then
+        elif (( 500 <= "$status" && "$status" < 600 )); then
             server_error_msg | die
         else
             die <<< "Unknown error. Status code: ${status}"
