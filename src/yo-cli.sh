@@ -101,7 +101,7 @@ link_w_qr() {
 
 source "$(dirname "$0")/platform/$(uname | cut -d _ -f 1 | tr '[:upper:]' '[:lower:]').sh" 2>/dev/null # PLATFORM_FUNCTION_FILE
 
-if [ ! -f "$YO_TOKEN_PATH" ]; then
+if [ ! -e "$YO_TOKEN_PATH" ]; then
     echo "No mobile device linked. Let's fix that :-)"
     link_w_qr "$(new_token)"
 else
