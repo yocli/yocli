@@ -52,20 +52,7 @@ text_display_qr() {
 }
 
 display_qr() {
-    local title="yo"
-    if [[ -n $DISPLAY || -n $WAYLAND_DISPLAY ]]; then
-        if type feh >/dev/null 2>&1; then
-            echo -n "$1" | qrencode --size 10 -o - | feh -x --title "$title" -g +200+200 - &
-        elif type gm >/dev/null 2>&1; then
-            echo -n "$1" | qrencode --size 10 -o - | gm display -title "$title" -geometry +200+200 - &
-        elif type display >/dev/null 2>&1; then
-            echo -n "$1" | qrencode --size 10 -o - | display -title "$title" -geometry +200+200 - &
-        else
-            text_display_qr "$1"
-        fi
-    else
-        text_display_qr "$1"
-    fi
+    text_display_qr "$1"
 }
 
 # Usage:
@@ -86,10 +73,6 @@ yo_repeatedly() {
     collapse_id="$(uuidgen)"
     log DEBUG <<< "HTTP codes inside ${1}..${2} will prompt a retry up to ${3:-256} times"
     for (( i=0; "$i"<"${3:-256}"; i++ )); do
-        if [ -n "$!" ] && ! ps -p "$!" >/dev/null; then
-            echo "Aborted." >&2
-            exit 1
-        fi
         local status
         status="$(yo "$collapse_id" ${4:+"$4"})"
         if (( "$status"<"${1}" || "${2}"<="$status" )); then
@@ -121,7 +104,6 @@ link_w_qr() {
     log DEBUG <<< "Polling backend for success..."
     local status
     status="$(yo_repeatedly 400 500 "" background)"
-    [ -n "$!" ] && kill $!
     if (( 500 <= "$status" && "$status" < 600 )); then
         server_error_msg | die
     else
