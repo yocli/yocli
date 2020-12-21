@@ -1,0 +1,11 @@
+[*]
+insert_final_newline = true
+
+# Use space insead of tabs because even though tabs work better for <<-
+# heredocs, it fails to be WYSIWYG when there are multiple tabs
+[*.sh]
+indent_style = space
+indent_size = 4
+
+[Makefile]
+indent_style = tab
