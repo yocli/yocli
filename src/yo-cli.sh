@@ -32,6 +32,17 @@ Hint: Try making it larger and invoking `yo` again!
 EOF
 }
 
+new_user_msg() {
+cat <<"EOF"
+It doesn't look like this computer is paired with any iOS devices yet.
+Let's fix that :-)
+
+A QR code will be displayed below, and you can scan it using the Yo iOS app to
+pair this computer with the iOS device you used to scan.
+
+EOF
+}
+
 # Usage:
 #     log CATEGORY <<< "Message goes here"
 log() {
@@ -56,26 +67,26 @@ display_qr() {
 }
 
 # Usage:
-#     yo APNS-COLLAPSE-ID [ APNS-PUSH-TYPE ]
+#     yo PC-TOKEN APNS-COLLAPSE-ID [ APNS-PUSH-TYPE ]
 yo() {
     curl --silent -o /dev/null -w '%{http_code}' \
          -X POST \
-         -F apns-collapse-id="$1" \
-         ${2:+-F apns-push-type="$2"} \
-         -F pc_token="$(< "$YO_TOKEN_PATH")" \
+         -F apns-collapse-id="$2" \
+         ${3:+-F apns-push-type="$3"} \
+         -F pc_token="$1" \
          -L "${YO_BASE_URL}/yo" 2>/dev/null
 }
 
 # Usage:
-#     yo-repeatedly HTTP-RETRY-LOW HTTP-RETRY-HIGH [ MAX-RETRY-TIMES APNS-PUSH-TYPE ]
+#     yo-repeatedly PC-TOKEN HTTP-RETRY-LOW HTTP-RETRY-HIGH [ MAX-RETRY-TIMES APNS-PUSH-TYPE ]
 yo_repeatedly() {
     local collapse_id
     collapse_id="$(uuidgen)"
-    log DEBUG <<< "HTTP codes inside ${1}..${2} will prompt a retry up to ${3:-256} times"
-    for (( i=0; "$i"<"${3:-256}"; i++ )); do
+    log DEBUG <<< "HTTP codes inside ${2}..${3} will prompt a retry up to ${4:-256} times"
+    for (( i=0; "$i"<"${4:-256}"; i++ )); do
         local status
-        status="$(yo "$collapse_id" ${4:+"$4"})"
-        if (( "$status"<"${1}" || "${2}"<="$status" )); then
+        status="$(yo "$1" "$collapse_id" ${5:+"$5"})"
+        if (( "$status"<"${2}" || "${3}"<="$status" )); then
             log DEBUG <<< "Try #${i}, status=${status}: OUTside retry range, not retrying anymore"
             break
         else
@@ -87,41 +98,37 @@ yo_repeatedly() {
     echo "$status"
 }
 
-new_token() {
-    local yo_token
-    yo_token="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-    log INFO <<< "Generated PC token: '${yo_token}'"
-    log INFO <<< "Saving newly generated PC token to: '$YO_TOKEN_PATH'"
-    echo "$yo_token" > "$YO_TOKEN_PATH"
-    echo "$yo_token"
-}
-
 # Usage:
 #     link_w_qr PC_TOKEN
 link_w_qr() {
-    log INFO <<< "Displaying QR code for '${YO_BASE_URL}/?p=${1}'"
-    display_qr "${YO_BASE_URL}/?p=${1}"
+    local yo_token
+    yo_token="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+    log INFO <<< "Generated PC token: '${yo_token}'"
+    log INFO <<< "Displaying QR code for '${YO_BASE_URL}/?p=${yo_token}'"
+    display_qr "${YO_BASE_URL}/?p=${yo_token}"
     log DEBUG <<< "Polling backend for success..."
     local status
-    status="$(yo_repeatedly 400 500 "" background)"
+    status="$(yo_repeatedly "${yo_token}" 400 500 "" background)"
     if (( 500 <= "$status" && "$status" < 600 )); then
         server_error_msg | die
     else
-        echo "Sucessfully linked a mobile device!"
+        echo "Sucessfully linked an iOS device!"
+        log INFO <<< "Saving newly generated PC token to: '$YO_TOKEN_PATH'"
+        echo "$yo_token" > "$YO_TOKEN_PATH"
     fi
 }
 
 source "$(dirname "$0")/platform/$(uname | cut -d _ -f 1 | tr '[:upper:]' '[:lower:]').sh" 2>/dev/null # PLATFORM_FUNCTION_FILE
 
 if [ ! -e "$YO_TOKEN_PATH" ]; then
-    echo "No mobile device linked. Let's fix that :-)"
-    link_w_qr "$(new_token)"
+    new_user_msg
+    link_w_qr
 else
-    status="$(yo_repeatedly 500 600 5 alert)"
+    status="$(yo_repeatedly "$(< "$YO_TOKEN_PATH")" 500 600 5 alert)"
     if (( "$status" < 200 && 300 <= "$status" )); then
         if [ "$status" -eq 410 ]; then
             echo "Mobile device no longer linked. Let's fix that :-)"
-            link_w_qr "$(new_token)"
+            link_w_qr
         elif (( 500 <= "$status" && "$status" < 600 )); then
             server_error_msg | die
         else
