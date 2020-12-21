@@ -108,7 +108,7 @@ else
     status="$(yo_repeatedly 500 600 5 alert)"
     if (("$status" < 200 && 300 <= "$status" )); then
         if [ "$status" -eq 410 ]; then
-            echo "No mobile device currently linked. Let's fix that :-)"
+            echo "Mobile device no longer linked. Let's fix that :-)"
             link_w_qr "$(new_token)"
         elif ((500 <= "$status" && "$status" < 600)); then
             echo "It seems that the yo backend at '$YO_BASE_URL' is down right now, please try again later."
