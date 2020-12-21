@@ -16,15 +16,29 @@ YO_TOKEN_PATH="${YO_TOKEN_PATH:-$YO_CONFIG_DIR/token}"
 
 YO_BASE_URL="${YO_BASE_URL:-https://api.yocli.io}"
 
+die() { cat >&2; exit 1; }
+
+server_error_msg() {
+cat <<EOF
+It seems that the yo backend at '$YO_BASE_URL' is down right now, please try
+again later.
+EOF
+}
+
+small_term_msg() {
+cat <<"EOF"
+Your terminal is too small to display the pairing QR Code properly.
+Hint: Try making it larger and invoking `yo` again!
+EOF
+}
+
 # Usage:
 #     link_w_qr STR-TO-DISPLAY
 text_display_qr() {
     if (( 22 < "$(tput lines)" )); then
         echo -n "$1" | qrencode -t utf8
     else
-        echo "Your terminal is too small to display the pairing QR Code properly."
-        echo "try making it larger and invoking \`yo\` again!"
-        exit 1
+        small_term_msg | die
     fi
 }
 
@@ -92,8 +106,7 @@ link_w_qr() {
     status="$(yo_repeatedly 400 500 "" background)"
     [ -n "$!" ] && kill $!
     if ((500 <= "$status" && "$status" < 600)); then
-        echo "It seems that the yo backend at '$YO_BASE_URL' is down right now, please try again later."
-        exit 1
+        server_error_msg | die
     else
         echo "Sucessfully linked a mobile device!"
     fi
@@ -111,11 +124,9 @@ else
             echo "Mobile device no longer linked. Let's fix that :-)"
             link_w_qr "$(new_token)"
         elif ((500 <= "$status" && "$status" < 600)); then
-            echo "It seems that the yo backend at '$YO_BASE_URL' is down right now, please try again later."
-            exit 1
+            server_error_msg | die
         else
-            echo "Unknown error. Status code: ${status}"
-            exit 1
+            die <<< "Unknown error. Status code: ${status}"
         fi
     fi
 fi
