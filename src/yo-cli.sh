@@ -164,8 +164,7 @@ yo_repeatedly() {
     local collapse_id
     collapse_id="$(uuidgen)"
     local max_tries
-    # max_tries="${4:-1800}"
-    max_tries="${4:-10}"
+    max_tries="${4:-1800}"
     log DEBUG <<< "HTTP codes inside ${2}..${3} will prompt a retry up to ${max_tries} times"
     for (( i=0; "$i"<"$max_tries"; i++ )); do
         local status
