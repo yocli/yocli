@@ -139,7 +139,7 @@ text_display_qr() {
     if (( 22 < "$(tput lines)" )); then
         echo -n "$1" | qrencode -t utf8
     else
-        small_term_msg | die
+        term_too_small_msg | die
     fi
 }
 
@@ -279,7 +279,7 @@ cmd_ping() {
     if (( "$status" < 200 || 300 <= "$status" )); then
         # Outside of 2xx
         if [ "$status" -eq 404 ]; then
-            not_initialized_msg | die
+            pc_token_not_paired_msg | die
         elif (( 500 <= "$status" && "$status" < 600 )); then
             server_error_msg | die
         else
@@ -289,7 +289,7 @@ cmd_ping() {
         status="$(yo_repeatedly "$(< "$YO_TOKEN_PATH")" 500 600 5 alert)"
         if (( "$status" < 200 || 300 <= "$status" )); then
             if [ "$status" -eq 404 ]; then
-                not_initialized_msg | die
+                pc_token_not_paired_msg | die
             elif [ "$status" -eq 410 ]; then
                 apns_gone_msg | die
             elif (( 500 <= "$status" && "$status" < 600 )); then
