@@ -52,7 +52,7 @@ pair_success_msg() {
 cat <<EOF
 Success: Linked an iOS device!
 
-Hint: Try sending your first notification:
+Hint: Try sending a notification:
 
     \$ $PROGRAM
 
@@ -77,7 +77,7 @@ EOF
 }
 
 qr_scan_prompt_msg() {
-cat <<"EOF"
+cat <<EOF
 ${underline}Scan the QR code${nounderline} displayed below using the Yo iOS app to pair or re-pair this
 computer with your iOS device.
 EOF
@@ -111,7 +111,7 @@ notification_dispatched_msg() {
 cat <<EOF
 Success: ${underline}Notification dispatched${nounderline} to your paired iOS device!
 
-Hint: Notifications not showing up? Try re-pairing with:
+Troubleshoot: Notifications not showing up? Try re-pairing with:
 
     \$ $PROGRAM ${underline}re${nounderline}pair
 
