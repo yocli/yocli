@@ -286,7 +286,9 @@ cmd_ping() {
         fi
     else
         status="$(yo_repeatedly "$(< "$YO_TOKEN_PATH")" 500 600 5 alert)"
-        if (( "$status" < 200 || 300 <= "$status" )); then
+        if [ "$status" = "TIMEOUT" ]; then
+            server_error_msg | die
+        elif (( "$status" < 200 || 300 <= "$status" )); then
             if [ "$status" -eq 404 ]; then
                 pc_token_not_paired_msg | die
             elif [ "$status" -eq 410 ]; then
