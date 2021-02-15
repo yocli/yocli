@@ -148,28 +148,29 @@ display_qr() {
 }
 
 # Usage:
-#     yo PC-TOKEN APNS-COLLAPSE-ID [ APNS-PUSH-TYPE ]
+#     yo PC-TOKEN [ MESSAGE ] APNS-COLLAPSE-ID [ APNS-PUSH-TYPE ]
 yo() {
     curl --silent -o /dev/null -w '%{http_code}' \
          -X POST \
-         -F apns-collapse-id="$2" \
-         ${3:+-F apns-push-type="$3"} \
+         -F apns-collapse-id="$3" \
+         ${4:+-F apns-push-type="$4"} \
          -F pc_token="$1" \
+         ${2:+-F message="$2"} \
          -L "${YO_BASE_URL}/yo" 2>/dev/null
 }
 
 # Usage:
-#     yo-repeatedly PC-TOKEN HTTP-RETRY-LOW HTTP-RETRY-HIGH [ MAX-RETRY-TIMES APNS-PUSH-TYPE ]
+#     yo-repeatedly PC-TOKEN [ MESSAGE ] HTTP-RETRY-LOW HTTP-RETRY-HIGH [ MAX-RETRY-TIMES APNS-PUSH-TYPE ]
 yo_repeatedly() {
     local collapse_id
     collapse_id="$(uuidgen)"
     local max_tries
-    max_tries="${4:-1800}"
-    log DEBUG <<< "HTTP codes inside ${2}..${3} will prompt a retry up to ${max_tries} times"
+    max_tries="${5:-1800}"
+    log DEBUG <<< "HTTP codes inside ${3}..${4} will prompt a retry up to ${max_tries} times"
     for (( i=0; "$i"<"$max_tries"; i++ )); do
         local status
-        status="$(yo "$1" "$collapse_id" ${5:+"$5"})"
-        if (( "$status"<"${2}" || "${3}"<="$status" )); then
+        status="$(yo "$1" "$2" "$collapse_id" ${6:+"$6"})"
+        if (( "$status"<"${3}" || "${4}"<="$status" )); then
             # Good, exit
             log DEBUG <<< "Try #${i}, status=${status}: OUTside retry range, not retrying anymore"
             break
@@ -200,7 +201,7 @@ link_w_qr() {
     log DEBUG <<< "Polling backend for success..."
     qr_waiting_msg
     local status
-    status="$(yo_repeatedly "${yo_token}" 400 500 "" background)"
+    status="$(yo_repeatedly "${yo_token}" "" 400 500 "" background)"
     if [ "$status" = "TIMEOUT" ]; then
         die <<< "Pairing timed out."
     elif (( "$status" < 200 || 300 <= "$status" )); then
@@ -274,6 +275,8 @@ cmd_ping() {
     yo_token="$(< "$YO_TOKEN_PATH")"
     local status
     status="$(is_paired_serverside "$yo_token")"
+    local message
+    message="$1"
     log INFO <<< "notification_bindings: ${status}"
     if (( "$status" < 200 || 300 <= "$status" )); then
         # Outside of 2xx
@@ -285,7 +288,7 @@ cmd_ping() {
             die <<< "Unknown error. Status code: ${status}"
         fi
     else
-        status="$(yo_repeatedly "$(< "$YO_TOKEN_PATH")" 500 600 5 alert)"
+        status="$(yo_repeatedly "$(< "$YO_TOKEN_PATH")" "$message" 500 600 5 alert)"
         if [ "$status" = "TIMEOUT" ]; then
             server_error_msg | die
         elif (( "$status" < 200 || 300 <= "$status" )); then
