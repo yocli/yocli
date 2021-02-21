@@ -18,11 +18,11 @@ YO_BASE_URL="${YO_BASE_URL:-https://api.yocli.io}"
 
 die() { cat >&2; exit 1; }
 
-bold=$(tput bold)
-nobold=$(tput sgr0)
+bold=$(tput bold) || bold=
+nobold=$(tput sgr0) || nobold=
 
-underline=$(tput smul)
-nounderline=$(tput rmul)
+underline=$(tput smul) || underline=
+nounderline=$(tput rmul) || nounderline=
 
 server_error_msg() {
 cat <<EOF
