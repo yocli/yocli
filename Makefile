@@ -12,7 +12,7 @@ PLATFORMFILE := src/platform/$(PLATFORM).sh
 print-%  : ; @echo $* = $($*)
 
 all:
-	@echo "Password store is a shell script, so there is nothing to do. Try \"make install\" instead."
+	@echo "$(PROGNAME) is a shell script, so there is nothing to do. Try \"make install\" instead."
 
 ifneq ($(strip $(wildcard $(PLATFORMFILE))),)
 install: # install-common
